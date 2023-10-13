@@ -9,18 +9,18 @@ class Blackjack {
 public:
     Blackjack();
     void play();
-    
+
 private:
     std::vector<std::string> deck;
     std::vector<std::string> player_hand;
     std::vector<std::string> dealer_hand;
-    
+
     int player_score;
     int dealer_score;
     int player_cash;
     int player_cash_base;
     int current_bet;
-    
+
     void initializeDeck();
     void shuffleDeck();
     void placeBet();
