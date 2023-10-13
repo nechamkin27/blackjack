@@ -17,9 +17,13 @@ private:
     
     int player_score;
     int dealer_score;
+    int player_cash;
+    int player_cash_base;
+    int current_bet;
     
     void initializeDeck();
     void shuffleDeck();
+    void placeBet();
     void dealInitialCards();
     void printHands(bool showDealerCard);
     void playerTurn();
