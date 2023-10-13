@@ -2,6 +2,11 @@
 #include <ctime>
 #include <cstdlib>
 
+//TODO: Customize pre-comit hook to remove trailing whitespace
+
+//TODO: Seperate this version with another version that is intended for simulation.
+//      The simulated version should not have text output for each turn, and should instead
+//      print only the player value and hand number.
 
 Blackjack::Blackjack() 
 {
