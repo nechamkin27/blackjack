@@ -17,22 +17,21 @@ private:
 
     int player_score;
     int dealer_score;
-    int player_cash;
+    double player_cash;
     int player_cash_base;
     int current_bet;
-
-    int insurance_bet;
-    int insurance_payout;
+    int payout;
 
     void initializeDeck();
     void shuffleDeck();
     void placeBet();
     void dealInitialCards();
     void printHands(bool showDealerCard);
-    void playerTurn();
+    bool playerTurn();
     void dealerTurn();
     bool isBust(const std::vector<std::string>& hand);
     int calculateScore(const std::vector<std::string>& hand);
+    void printPayout(bool endGame);
 };
 
 #endif // BLACKJACK_HPP
