@@ -21,6 +21,9 @@ private:
     int player_cash_base;
     int current_bet;
 
+    int insurance_bet;
+    int insurance_payout;
+
     void initializeDeck();
     void shuffleDeck();
     void placeBet();

@@ -2,11 +2,11 @@
 #include <ctime>
 #include <cstdlib>
 
-//TODO: Customize pre-comit hook to remove trailing whitespace
-
-//TODO: Seperate this version with another version that is intended for simulation.
+// TODO: Seperate this version with another version that is intended for simulation.
 //      The simulated version should not have text output for each turn, and should instead
 //      print only the player value and hand number.
+
+// TODO: Setup Blackjack score for player and dealer. If dealer is showing an ace, ask for insurance.
 
 Blackjack::Blackjack()
 {
@@ -15,6 +15,8 @@ Blackjack::Blackjack()
     player_cash = 250;
     player_cash_base = 250;
     current_bet = 0;
+    insurance_bet = 0;
+    insurance_payout = 0;
     initializeDeck();
     shuffleDeck();
 }
@@ -153,6 +155,26 @@ void Blackjack::playerTurn()
 
 void Blackjack::dealerTurn()
 {
+    char insurance;
+    dealer_score = calculateScore(dealer_hand);
+    std::string face_up_card = dealer_hand[1].substr(0, dealer_hand[1].find(" of "));
+    std::string face_down_card = dealer_hand[0].substr(0, dealer_hand[0].find(" of "));
+
+    if(dealer_hand[1].substr(0, dealer_hand[1].find(" of ")) == "Ace")
+    {
+        std::cout << "Would you like insurance?" << std::endl;
+        std::cin >> insurance;
+
+        if(face_down_card == "King"
+            || face_down_card == "Queen"
+            || face_down_card == "Jack"
+            || std::stoi(face_down_card) == 10)
+        {
+            std::cout << "That's Blackjack, sorry!" << std::endl;
+// TODO: insert payout logic for insurance
+        }
+
+    }
     while (dealer_score < 17)
     {
         dealer_hand.push_back(deck.back());
@@ -229,7 +251,6 @@ void Blackjack::play()
         placeBet();
 
         dealInitialCards();
-        //printHands(false);
         playerTurn();
 
         if (!isBust(player_hand))
