@@ -15,7 +15,8 @@
 
 // TODO: Add splitting hands.
 
-// TODO: Add doubling down.
+// TODO: The program is crashing with a seg fault after a few turns. Determine the cause of this
+//      (presumably from the deck) and fix.
 
 Blackjack::Blackjack()
 {
@@ -62,7 +63,8 @@ void Blackjack::placeBet()
 
     if(bet <= 0 || bet > player_cash)
     {
-        std::cout << "Invalid bet. Use value greater than 0 and less than current cash.";
+        std::cout << "Invalid bet. Use value greater than 0 and less than current cash." << std::endl;
+        placeBet();
     }
     else
     {
@@ -132,19 +134,16 @@ void Blackjack::printHands(bool showDealerCard)
 
 bool Blackjack::playerTurn()
 {
-    // If player has blackjack, payout 3 to 2!
-    if(calculateScore(player_hand) == 21)
-    {
-        std::cout << "Blackjack baby!";
-        player_cash = (current_bet * 1.5);
-        return true;
-    }
-    // If card showing is an Ace, ask if player would like insurance.
+    printHands(false);
+
     char insurance;
-    dealer_score = calculateScore(dealer_hand);
     std::string face_up_card = dealer_hand[1].substr(0, dealer_hand[1].find(" of "));
     std::string face_down_card = dealer_hand[0].substr(0, dealer_hand[0].find(" of "));
 
+    if(checkForBlackjack(face_up_card))
+        return true;
+
+    // If card showing is an Ace, ask if player would like insurance.
     if(face_up_card == "Ace")
     {
         std::cout << "Would you like insurance?" << std::endl;
@@ -153,7 +152,7 @@ bool Blackjack::playerTurn()
        if(face_down_card == "King"
        || face_down_card == "Queen"
        || face_down_card == "Jack"
-       || std::stoi(face_down_card) == 10)
+       || face_down_card == "10")
        {
             std::cout << "That's Blackjack, sorry!" << std::endl;
 
@@ -164,7 +163,7 @@ bool Blackjack::playerTurn()
             }
             else if(insurance == 'N' || insurance == 'n')
             {
-                // Lose init bet
+                // Lose init bet.
                 player_cash -= current_bet;
                 return true;
             }
@@ -183,42 +182,36 @@ bool Blackjack::playerTurn()
         }
     }
 
-    // If dealer is show a card value of 10, check if they have blackjack.
-    if(face_up_card == "King"
-    || face_up_card == "Queen"
-    || face_up_card == "Jack"
-    || std::stoi(face_down_card) == 10)
-    {
-        if(dealer_score == 21)
-        {
-            std::cout << "Dealer has blackjack, sorry!";
-            player_cash -= current_bet;
-            return true;
-        }
-    }
-
     char choice;
+
     while (true)
     {
-        printHands(false);
-        std::cout << "Do you want to 'Hit' (H) or 'Stand' (S)? ";
+        bool firstTurn = (player_hand.size() == 2);
+
+        if(firstTurn)
+            std::cout << "Do you want to 'Hit' (H), 'Stand' (S), or 'Double Down' (D)?";
+            // Check for insurance
+            // Check for dealer blackjack
+        else
+        {
+            printHands(false);
+            std::cout << "Do you want to 'Hit' (H), or 'Stand' (S)?";
+        }
         std::cin >> choice;
         std::cout << std::endl;
         if (choice == 'H' || choice == 'h')
         {
-            player_hand.push_back(deck.back());
-            deck.pop_back();
-            player_score = calculateScore(player_hand);
-            if (isBust(player_hand))
-            {
-                printHands(true);
-                std::cout << "Bust! You lose." << std::endl;
-                player_cash -= current_bet;
+            if(checkForBust())
                 return false;
-            }
         }
         else if (choice == 'S' || choice == 's')
         {
+            return false;
+        }
+        else if (firstTurn && (choice == 'D' || choice == 'd'))
+        {
+            current_bet*=2;
+            checkForBust();
             return false;
         }
         else
@@ -228,6 +221,54 @@ bool Blackjack::playerTurn()
     }
     return false;
 }
+
+bool Blackjack::checkForBlackjack(std::string& face_up_card)
+{
+    // If player has blackjack, payout 3 to 2!
+    if(calculateScore(player_hand) == 21)
+    {
+        std::cout << "Blackjack baby!" << std::endl;
+        player_cash += (current_bet * 1.5);
+        return true;
+    }
+
+    // If dealer is showing a card value of 10, check if they have blackjack.
+    if(face_up_card == "King"
+    || face_up_card == "Queen"
+    || face_up_card == "Jack"
+    || face_up_card == "10")
+    {
+        if(calculateScore(dealer_hand) == 21)
+        {
+            std::cout << "Dealer has blackjack, sorry!";
+            player_cash -= current_bet;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Blackjack::checkForBust()
+{
+    player_hand.push_back(deck.back());
+    deck.pop_back();
+    player_score = calculateScore(player_hand);
+    if (isBust(player_hand))
+    {
+        printHands(true);
+        std::cout << "Bust! You lose." << std::endl;
+        player_cash -= current_bet;
+        return true;
+    }
+
+    return false;
+}
+
+/* void Blackjack::checkInsurance()
+{
+
+} */
 
 void Blackjack::dealerTurn()
 {
@@ -294,6 +335,35 @@ int Blackjack::calculateScore(const std::vector<std::string>& hand)
     return score;
 }
 
+// This is sloppy. Prints payout if endgame and current cash if not.
+void Blackjack::printPayout(bool endGame)
+{
+    if(endGame)
+    {
+        std::cout << "Thanks for playing Blackjack!" << std::endl;
+        if(payout < 0)
+        {
+            std::cout << "Your net payout is $" << RED_TEXT << payout << RESET_TEXT << std::endl;
+            std::cout << "Ouch! Better luck next time!";
+        }
+        else if(payout > 0)
+        {
+            std::cout << "Your net payout is $" << GREEN_TEXT << payout << RESET_TEXT << std::endl;
+            std::cout << "Wahoo! We're both glad you came!";
+        }
+    }
+
+    else
+    {
+        if(payout < 0)
+            std::cout << player_cash << "(" << RED_TEXT  << payout  << RESET_TEXT << ")" << std::endl;
+        else if(payout > 0)
+            std::cout << player_cash << "(+" << GREEN_TEXT  << payout  << RESET_TEXT << ")" << std::endl;
+        else
+            std::cout << player_cash << std::endl;
+    }
+}
+
 void Blackjack::play()
 {
     std::cout << "\nWelcome to Blackjack!\n" << std::endl;
@@ -323,35 +393,6 @@ void Blackjack::play()
     while (playAgain == 'Y' || playAgain == 'y');
 
     printPayout(true);
-}
-
-// This is sloppy. Prints payout if endgame and current cash if not.
-void Blackjack::printPayout(bool endGame)
-{
-    if(endGame)
-    {
-        std::cout << "Thanks for playing Blackjack!" << std::endl;
-        if(payout < 0)
-        {
-            std::cout << "Your net payout is $" << RED_TEXT << payout << RESET_TEXT << std::endl;
-            std::cout << "Ouch! Better luck next time!";
-        }
-        else if(payout > 0)
-        {
-            std::cout << "Your net payout is $" << GREEN_TEXT << payout << RESET_TEXT << std::endl;
-            std::cout << "Wahoo! We're both glad you came!";
-        }
-    }
-
-    else
-    {
-        if(payout < 0)
-            std::cout << player_cash << "(" << RED_TEXT  << payout  << RESET_TEXT << ")" << std::endl;
-        else if(payout > 0)
-            std::cout << player_cash << "(+" << GREEN_TEXT  << payout  << RESET_TEXT << ")" << std::endl;
-        else
-            std::cout << player_cash << std::endl;
-    }
 }
 
 int main()
