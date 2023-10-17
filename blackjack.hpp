@@ -29,6 +29,8 @@ private:
     void printHands(bool showDealerCard);
     bool playerTurn();
     void dealerTurn();
+    bool checkForBust();
+    bool checkForBlackjack(std::string& face_up_card);
     bool isBust(const std::vector<std::string>& hand);
     int calculateScore(const std::vector<std::string>& hand);
     void printPayout(bool endGame);
