@@ -5,18 +5,21 @@
 #define GREEN_TEXT "\033[32m"
 #define RED_TEXT "\033[31m"
 #define RESET_TEXT "\033[0m"
+#define BLUE_TEXT "\033[34m"
+#define YELLOW_TEXT "\033[33m"
+#define CYAN_TEXT "\033[36m"
 
 // TODO: Seperate this version with another version that is intended for simulation.
 //      The simulated version should not have text output for each turn, and should instead
 //      print only the player value and hand number. Strategies for insurance, splitting hands,
 //      and betting should be configurable.
+//      Possible strategies of increased betting: Exponential, Fibonnaci
 
-// TODO: Fix deck to work like actual decks. Make the number of decks configurable.
+// TODO: Make the number of decks configurable.
 
 // TODO: Add splitting hands.
 
-// TODO: The program is crashing with a seg fault after a few turns. Determine the cause of this
-//      (presumably from the deck) and fix.
+// TODO: An invalid input is causing an endless loop in placeBet function. Probably a try catch to use.
 
 Blackjack::Blackjack()
 {
@@ -92,7 +95,7 @@ void Blackjack::dealInitialCards()
 
 void Blackjack::printHands(bool showDealerCard)
 {
-    std::cout << "Your hand: ";
+    std::cout << CYAN_TEXT << "Your hand: " << RESET_TEXT;
     for (const std::string& card : player_hand)
     {
         if(card == player_hand.back())
@@ -100,9 +103,9 @@ void Blackjack::printHands(bool showDealerCard)
         else
             std::cout << card << ", ";
     }
-    std::cout << "Your score: " << player_score << std::endl;
+    std::cout << CYAN_TEXT << "Your score: " << RESET_TEXT << player_score << std::endl;
 
-    std::cout << "Dealer's hand: ";
+    std::cout << YELLOW_TEXT << "Dealer's hand: " << RESET_TEXT;
     for (size_t i = 0; i < dealer_hand.size(); i++)
     {
         if (i == 0 && !showDealerCard)
@@ -122,11 +125,11 @@ void Blackjack::printHands(bool showDealerCard)
     // Display the value of the second card in the dealer's hand when it's hidden.
     if (!showDealerCard && dealer_hand.size() >= 2)
     {
-        std::cout << "Score: " << calculateScore(std::vector<std::string>{dealer_hand[1]});
+        std::cout << YELLOW_TEXT << "Dealer's score: " << RESET_TEXT << calculateScore(std::vector<std::string>{dealer_hand[1]});
     }
     else if (showDealerCard)
     {
-        std::cout << "Score: " << dealer_score;
+        std::cout << YELLOW_TEXT << "Dealer's score: " << RESET_TEXT << dealer_score;
     }
 
     std::cout << std::endl;
@@ -201,6 +204,8 @@ bool Blackjack::playerTurn()
         std::cout << std::endl;
         if (choice == 'H' || choice == 'h')
         {
+            if(deck.size() < 1)
+                reshuffleDeck(1);
             if(checkForBust())
                 return false;
         }
@@ -211,6 +216,8 @@ bool Blackjack::playerTurn()
         else if (firstTurn && (choice == 'D' || choice == 'd'))
         {
             current_bet*=2;
+            if(deck.size() < 1)
+                reshuffleDeck(1);
             checkForBust();
             return false;
         }
@@ -240,7 +247,7 @@ bool Blackjack::checkForBlackjack(std::string& face_up_card)
     {
         if(calculateScore(dealer_hand) == 21)
         {
-            std::cout << "Dealer has blackjack, sorry!";
+            std::cout << "Dealer has blackjack, sorry!" << std::endl;
             player_cash -= current_bet;
             return true;
         }
@@ -274,6 +281,8 @@ void Blackjack::dealerTurn()
 {
     while (dealer_score < 17)
     {
+        if(deck.size() < 1)
+            reshuffleDeck(1);
         dealer_hand.push_back(deck.back());
         deck.pop_back();
         dealer_score = calculateScore(dealer_hand);
@@ -364,19 +373,51 @@ void Blackjack::printPayout(bool endGame)
     }
 }
 
+void Blackjack::reshuffleDeck(int numDecks)
+{
+    std::cout << BLUE_TEXT << "Reshuffling " << numDecks <<" deck(s)" << RESET_TEXT <<std::endl;
+    deck.clear();
+    initializeDeck();
+    shuffleDeck();
+}
+
+bool Blackjack::promptPlayAgain()
+{
+    char playAgain;
+    std::cout << "Do you want to play again? (Y/N): ";
+    std::cin >> playAgain;
+    std::cout << std::endl;
+    payout = player_cash - player_cash_base;
+    if(playAgain == 'Y' || playAgain == 'y')
+    {
+        return true;
+    }
+    else if(playAgain == 'N' || playAgain == 'n')
+    {
+        return false;
+    }
+    else
+    {
+        promptPlayAgain();
+    }
+    return true;
+}
+
 void Blackjack::play()
 {
     std::cout << "\nWelcome to Blackjack!\n" << std::endl;
-    char playAgain;
+    bool playAgain = true;
 
-    do
+    while(playAgain)
     {
         current_bet = 0;
 
         std::cout << "Current available cash: $";
         printPayout(false);
-        placeBet();
 
+        placeBet();
+        if(deck.size() < 1)
+            reshuffleDeck(1);
         dealInitialCards();
         bool blackjack = playerTurn();
 
@@ -385,12 +426,8 @@ void Blackjack::play()
             dealerTurn();
         }
 
-        std::cout << "Do you want to play again? (Y/N): ";
-        std::cin >> playAgain;
-        std::cout << std::endl;
-        payout = player_cash - player_cash_base;
+        playAgain = promptPlayAgain();
     }
-    while (playAgain == 'Y' || playAgain == 'y');
 
     printPayout(true);
 }

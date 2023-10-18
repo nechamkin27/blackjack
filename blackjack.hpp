@@ -34,6 +34,8 @@ private:
     bool isBust(const std::vector<std::string>& hand);
     int calculateScore(const std::vector<std::string>& hand);
     void printPayout(bool endGame);
+    void reshuffleDeck(int numDecks);
+    bool promptPlayAgain();
 };
 
 #endif // BLACKJACK_HPP
