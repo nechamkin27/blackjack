@@ -22,6 +22,8 @@ private:
     int current_bet;
     int payout;
     int numDecks;
+    int numTurns;
+    int currTurn;
 
     void initializeDeck(int numDecks);
     void shuffleDeck();

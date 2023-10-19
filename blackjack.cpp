@@ -9,15 +9,14 @@
 #define YELLOW_TEXT "\033[33m"
 #define CYAN_TEXT "\033[36m"
 
-// TODO: Seperate this version with another version that is intended for simulation.
-//      The simulated version should not have text output for each turn, and should instead
+// TODO: The simulated version (current branch) should not have text output for each turn, and should instead
 //      print only the player value and hand number. Strategies for insurance, splitting hands,
 //      and betting should be configurable.
 //      Possible strategies of increased betting: Exponential, Fibonnaci
 
 // TODO: Add splitting hands.
 
-// TODO: An invalid input is causing an endless loop in placeBet function. Probably a try catch to use.
+// TODO!: stoi is causing a terminate within the program somewhere. stoi is only called in calculateScore(hand).
 
 Blackjack::Blackjack()
 {
@@ -25,9 +24,11 @@ Blackjack::Blackjack()
     dealer_score = 0;
     player_cash = 250;
     player_cash_base = 250;
-    current_bet = 0;
+    current_bet = 1;
     payout = 0;
     numDecks = 1;
+    numTurns = 100;
+    currTurn = 0;
 }
 
 void Blackjack::initializeDeck(int numDecks)
@@ -151,8 +152,9 @@ bool Blackjack::playerTurn()
     // If card showing is an Ace, ask if player would like insurance.
     if(face_up_card == "Ace")
     {
-        std::cout << "Would you like insurance?" << std::endl;
-        std::cin >> insurance;
+        //std::cout << "Would you like insurance?" << std::endl;
+        //std::cin >> insurance;
+        insurance = 'y';
 
        if(face_down_card == "King"
        || face_down_card == "Queen"
@@ -164,12 +166,14 @@ bool Blackjack::playerTurn()
             if(insurance == 'Y' || insurance == 'y')
             {
                 // Lose init bet, but win insurance 2:1. Net stay same.
+                current_bet *= 2;
                 return true;
             }
             else if(insurance == 'N' || insurance == 'n')
             {
                 // Lose init bet.
                 player_cash -= current_bet;
+                current_bet *= 2;
                 return true;
             }
         }
@@ -194,7 +198,7 @@ bool Blackjack::playerTurn()
         bool firstTurn = (player_hand.size() == 2);
 
         if(firstTurn)
-            std::cout << "Do you want to 'Hit' (H), 'Stand' (S), or 'Double Down' (D)?";
+            std::cout << "Do you want to 'Hit' (H), 'Stand' (S), or 'Double Down' (D)?\n";
             // Check for insurance
             // Check for dealer blackjack
         else
@@ -202,8 +206,15 @@ bool Blackjack::playerTurn()
             printHands(false);
             std::cout << "Do you want to 'Hit' (H), or 'Stand' (S)?";
         }
-        std::cin >> choice;
-        std::cout << std::endl;
+        //std::cin >> choice;
+        //std::cout << std::endl;
+        if(firstTurn && calculateScore(player_hand) == 11)
+            choice = 'D';
+        else if(calculateScore(player_hand) < 15)
+            choice = 'H';
+        else
+            choice = 'S';
+
         if (choice == 'H' || choice == 'h')
         {
             if(deck.size() < 1)
@@ -238,6 +249,7 @@ bool Blackjack::checkForBlackjack(std::string& face_up_card)
     {
         std::cout << "Blackjack baby!" << std::endl;
         player_cash += (current_bet * 1.5);
+        current_bet = 1;
         return true;
     }
 
@@ -251,6 +263,7 @@ bool Blackjack::checkForBlackjack(std::string& face_up_card)
         {
             std::cout << "Dealer has blackjack, sorry!" << std::endl;
             player_cash -= current_bet;
+            current_bet *= 2;
             return true;
         }
     }
@@ -268,6 +281,7 @@ bool Blackjack::checkForBust()
         printHands(true);
         std::cout << "Bust! You lose." << std::endl;
         player_cash -= current_bet;
+        current_bet *- 2;
         return true;
     }
 
@@ -296,11 +310,13 @@ void Blackjack::dealerTurn()
     {
         std::cout << "You won " << current_bet << "!\n";
         player_cash += current_bet;
+        current_bet = 1;
     }
     else if (dealer_score > player_score)
     {
         std::cout << "Dealer wins." << std::endl;
         player_cash -= current_bet;
+        current_bet *= 2;
     }
     else
     {
@@ -333,6 +349,8 @@ int Blackjack::calculateScore(const std::vector<std::string>& hand)
         }
         else
         {
+            std::cout << "Card being converted: " << card << std::endl;
+            std::cout << "Value being converted to an int: " << value << std::endl;
             score += std::stoi(value);
         }
     }
@@ -387,7 +405,10 @@ bool Blackjack::promptPlayAgain()
 {
     char playAgain;
     std::cout << "Do you want to play again? (Y/N): ";
-    std::cin >> playAgain;
+    if((current_bet > player_cash) || (currTurn > numTurns))
+        playAgain = 'N';
+    else
+        playAgain = 'Y';
     std::cout << std::endl;
     payout = player_cash - player_cash_base;
     if(playAgain == 'Y' || playAgain == 'y')
@@ -410,6 +431,8 @@ void Blackjack::play()
     std::cout << "\nWelcome to Blackjack!\n" << std::endl;
     std::cout << "How many decks would you like to play with?" << std::endl;
     std::cin >> numDecks;
+    std::cout << "How many turns would you like to play?" << std::endl;
+    std::cin >> numTurns;
     initializeDeck(numDecks);
     shuffleDeck();
 
@@ -417,12 +440,13 @@ void Blackjack::play()
 
     while(playAgain)
     {
-        current_bet = 0;
+        currTurn++;
 
         std::cout << "\nCurrent available cash: $";
         printPayout(false);
+        std::cout << "\nCurrent turn number: " << currTurn << std::endl;
 
-        placeBet();
+        //placeBet();
         if(deck.size() < 1)
             reshuffleDeck();
         dealInitialCards();
