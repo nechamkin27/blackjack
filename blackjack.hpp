@@ -21,8 +21,9 @@ private:
     int player_cash_base;
     int current_bet;
     int payout;
+    int numDecks;
 
-    void initializeDeck();
+    void initializeDeck(int numDecks);
     void shuffleDeck();
     void placeBet();
     void dealInitialCards();
@@ -34,7 +35,7 @@ private:
     bool isBust(const std::vector<std::string>& hand);
     int calculateScore(const std::vector<std::string>& hand);
     void printPayout(bool endGame);
-    void reshuffleDeck(int numDecks);
+    void reshuffleDeck();
     bool promptPlayAgain();
 };
 

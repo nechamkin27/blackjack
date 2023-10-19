@@ -15,8 +15,6 @@
 //      and betting should be configurable.
 //      Possible strategies of increased betting: Exponential, Fibonnaci
 
-// TODO: Make the number of decks configurable.
-
 // TODO: Add splitting hands.
 
 // TODO: An invalid input is causing an endless loop in placeBet function. Probably a try catch to use.
@@ -29,22 +27,26 @@ Blackjack::Blackjack()
     player_cash_base = 250;
     current_bet = 0;
     payout = 0;
-    initializeDeck();
-    shuffleDeck();
+    numDecks = 1;
 }
 
-void Blackjack::initializeDeck()
+void Blackjack::initializeDeck(int numDecks)
 {
-    const std::string suits[] = {"Hearts", "Diamonds", "Clubs", "Spades"};
-    const std::string values[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"};
-
-    for (const std::string& suit : suits)
+    for( int deckNum = 0; deckNum < numDecks; deckNum++)
     {
-        for (const std::string& value : values)
+        const std::string suits[] = {"Hearts", "Diamonds", "Clubs", "Spades"};
+        const std::string values[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"};
+
+        for (const std::string& suit : suits)
         {
-            deck.push_back(value + " of " + suit);
+            for (const std::string& value : values)
+            {
+                deck.push_back(value + " of " + suit);
+            }
         }
     }
+
+    std::cout << "Deck size: " << deck.size() << std::endl;
 }
 
 void Blackjack::shuffleDeck()
@@ -205,7 +207,7 @@ bool Blackjack::playerTurn()
         if (choice == 'H' || choice == 'h')
         {
             if(deck.size() < 1)
-                reshuffleDeck(1);
+                reshuffleDeck();
             if(checkForBust())
                 return false;
         }
@@ -217,7 +219,7 @@ bool Blackjack::playerTurn()
         {
             current_bet*=2;
             if(deck.size() < 1)
-                reshuffleDeck(1);
+                reshuffleDeck();
             checkForBust();
             return false;
         }
@@ -282,7 +284,7 @@ void Blackjack::dealerTurn()
     while (dealer_score < 17)
     {
         if(deck.size() < 1)
-            reshuffleDeck(1);
+            reshuffleDeck();
         dealer_hand.push_back(deck.back());
         deck.pop_back();
         dealer_score = calculateScore(dealer_hand);
@@ -373,11 +375,11 @@ void Blackjack::printPayout(bool endGame)
     }
 }
 
-void Blackjack::reshuffleDeck(int numDecks)
+void Blackjack::reshuffleDeck()
 {
-    std::cout << BLUE_TEXT << "Reshuffling " << numDecks <<" deck(s)" << RESET_TEXT <<std::endl;
+    std::cout << BLUE_TEXT << "Reshuffling the deck(s)" << RESET_TEXT <<std::endl;
     deck.clear();
-    initializeDeck();
+    initializeDeck(numDecks);
     shuffleDeck();
 }
 
@@ -406,18 +408,23 @@ bool Blackjack::promptPlayAgain()
 void Blackjack::play()
 {
     std::cout << "\nWelcome to Blackjack!\n" << std::endl;
+    std::cout << "How many decks would you like to play with?" << std::endl;
+    std::cin >> numDecks;
+    initializeDeck(numDecks);
+    shuffleDeck();
+
     bool playAgain = true;
 
     while(playAgain)
     {
         current_bet = 0;
 
-        std::cout << "Current available cash: $";
+        std::cout << "\nCurrent available cash: $";
         printPayout(false);
 
         placeBet();
         if(deck.size() < 1)
-            reshuffleDeck(1);
+            reshuffleDeck();
         dealInitialCards();
         bool blackjack = playerTurn();
 
